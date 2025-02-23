@@ -138,7 +138,7 @@ COMPILER_JUDGE_NJOBS=8 ./compiler_judge/compiler_judge ./compiler_judge/HW1
 可以在 `index.toml` 中添加声明，这样之后就可以运行这个测试用例了：
 
 ```toml
-[sample_1]
+[corner_case_1]
 cmd = "../../HW1/build/tools/main/main ./corner_case_1"
 answer = "./corner_case_1.out"
 ```
