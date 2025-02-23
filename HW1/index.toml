@@ -20,10 +20,14 @@ answer = "./simple_test_1.out"
 
 [deepseek_test_1]
 cmd = "../../HW1/build/tools/main/main ./deepseek_test_1"
+answer = "./deepseek_test_1.out"
 
 [signed_overflow]
 cmd = "../../HW1/build/tools/main/main ./signed_overflow"
 answer = "./signed_overflow.out"
+
+[division_by_zero]
+cmd = "../../HW1/build/tools/main/main ./division_by_zero"
 
 [is_your_program_slow]
 cmd = "../../HW1/build/tools/main/main ./slow"
