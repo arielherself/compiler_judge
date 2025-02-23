@@ -77,6 +77,7 @@ enum JobStatus {
     WrongAnswer(String, String),
     TimeLimitExceeded,
     RuntimeError(String),
+    Manual(String),
     Tbd,
 }
 
@@ -89,7 +90,7 @@ struct Job {
     name: String,
     command: String,
     input: String,
-    correct_output: String,
+    correct_output: Option<String>,
     user_output_source: UserOutputSource,
     cursor: Arc<Mutex<Cursor>>,
     cursor_pos: usize,
@@ -97,7 +98,7 @@ struct Job {
 }
 
 impl Job {
-    fn new(name: String, command: String, input: String, correct_output: String, user_output_source: UserOutputSource, cursor: Arc<Mutex<Cursor>>) -> Self {
+    fn new(name: String, command: String, input: String, correct_output: Option<String>, user_output_source: UserOutputSource, cursor: Arc<Mutex<Cursor>>) -> Self {
         Self {
             name,
             command,
@@ -117,6 +118,7 @@ impl Job {
             JobStatus::WrongAnswer(_, _) => format!("{}{}WA{}", Cursor::COLOR_BOLD, Cursor::COLOR_RED, Cursor::COLOR_RESET),
             JobStatus::TimeLimitExceeded => format!("{}{}TL{}", Cursor::COLOR_BOLD, Cursor::COLOR_MAGENTA, Cursor::COLOR_RESET),
             JobStatus::RuntimeError(_) => format!("{}{}RE{}", Cursor::COLOR_BOLD, Cursor::COLOR_CYAN, Cursor::COLOR_RESET),
+            JobStatus::Manual(_) => format!("{}MN{}", Cursor::COLOR_BOLD, Cursor::COLOR_RESET),
         };
         self.cursor.lock().await.write_line(self.cursor_pos, format!("Test: {}    [ {} ]", self.name, state_str));
     }
@@ -163,7 +165,7 @@ impl Job {
                 match std::fs::read_to_string(filename) {
                     Ok(s) => job_output = s,
                     Err(_) => {
-                        self.status = JobStatus::WrongAnswer(self.correct_output.clone(), "".to_string());
+                        self.status = JobStatus::WrongAnswer(self.correct_output.clone().unwrap_or("".to_string()), "".to_string());
                         self.update_state().await;
                         return;
                     }
@@ -172,12 +174,14 @@ impl Job {
         };
 
         job_output = job_output.trim().to_string();
-        self.correct_output = self.correct_output.trim().to_string();
 
-        self.status = if job_output == self.correct_output {
-            JobStatus::Accepted
-        } else {
-            JobStatus::WrongAnswer(self.correct_output.clone(), job_output)
+        self.status = match self.correct_output {
+            Some(ref correct_output) => if job_output == *correct_output.trim().to_string() {
+                JobStatus::Accepted
+            } else {
+                JobStatus::WrongAnswer(correct_output.clone(), job_output)
+            }
+            None => JobStatus::Manual(job_output)
         };
         self.update_state().await;
     }
@@ -188,7 +192,7 @@ struct Testcase {
     cmd: String,
     input: Option<String>,
     output: Option<String>,
-    answer: String,
+    answer: Option<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -220,7 +224,7 @@ async fn main() {
             None => UserOutputSource::Stdout,
         };
 
-        let correct_output = std::fs::read_to_string(&content.answer).unwrap_or_else(|_| panic!("Cannot read answer from {}", &content.answer));
+        let correct_output = content.answer.as_ref().map(|answer_path| std::fs::read_to_string(answer_path).unwrap_or_else(|_| panic!("Cannot read answer from {}", answer_path)));
 
         let handle = tokio::spawn({
             let cursor = cursor.clone();
@@ -248,6 +252,8 @@ async fn main() {
     let mut time_limit_exceeded = String::new();
     let mut runtime_error_cnt = 0;
     let mut runtime_error = String::new();
+    let mut manual_cnt = 0;
+    let mut manual = String::new();
     let tot = collected_jobs.len();
     for job in collected_jobs {
         match job.status {
@@ -267,7 +273,11 @@ async fn main() {
                 runtime_error_cnt += 1;
                 runtime_error += format!("    {}: runtime error: {}\n", job.name, e).as_str();
             }
-            JobStatus::Tbd => (),
+            JobStatus::Manual(s) => {
+                manual_cnt += 1;
+                manual += format!("    {}: result is \"{}\"", job.name, s).as_str();
+            }
+            JobStatus::Tbd => ()
         }
     }
 
@@ -285,5 +295,8 @@ async fn main() {
     }
     if wrong_answer_cnt != 0 {
         println!("  Wrong Answer ({}/{}):\n{}", wrong_answer_cnt, tot, wrong_answer);
+    }
+    if manual_cnt != 0 {
+        println!("  Manual Check ({}/{}):\n{}", manual_cnt, tot, manual);
     }
 }

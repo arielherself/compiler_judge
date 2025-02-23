@@ -1,0 +1,24 @@
+public int main() { 
+a = 3; 
+b = 4; 
+c = ((a + b) * 2); 
+d = ({ 
+e = (c / a); 
+f = ({ 
+g = ((e + b) * a); 
+h = (g - c); 
+i = (h / 2); 
+} (i + e)); 
+j = ((e * f) + h); 
+} (j - i)); 
+k = ({ 
+m = ((d / 5) + 7); 
+n = ({ 
+p = ((m * a) / b); 
+q = (p - (m / 2)); 
+} (q * p)); 
+r = ((n + d) - (m * q)); 
+} (r / (a + 1))); 
+result = (((c + d) * (k - a)) / ((b + q) - (m / 3))); 
+return result; 
+}
