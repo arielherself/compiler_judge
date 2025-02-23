@@ -2,13 +2,17 @@ use tokio::sync::Semaphore;
 use tokio::sync::Mutex;
 use tokio::process::Command;
 use lazy_static::lazy_static;
+use std::collections::HashMap;
 use std::env::var;
+use std::env::args;
 use std::io::prelude::*;
+use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
 use tokio::time::timeout;
 use std::time::Duration;
+use toml::Table;
 
 lazy_static! {
     static ref TIMEOUT: usize = var("COMPILER_JUDGE_TIMEOUT").unwrap_or("2".to_string()).parse().unwrap();
@@ -180,70 +184,48 @@ impl Job {
     }
 }
 
+#[derive(serde::Deserialize)]
+struct Testcase {
+    cmd: String,
+    input: Option<String>,
+    output: Option<String>,
+    answer: String,
+}
+
+#[derive(serde::Deserialize)]
+struct TestRoot {
+    #[serde(flatten)]
+    tests: HashMap<String, Testcase>,
+}
+
 #[tokio::main]
 async fn main() {
     let cursor = Arc::new(Mutex::new(Cursor::new()));
-    let mut job1 = Job::new(
-        "job1".to_string(),
-        "sleep 2".to_string(),
-        "".to_string(),
-        "hello".to_string(),
-        UserOutputSource::Stdout, cursor.clone()
-    );
-    let mut job2 = Job::new(
-        "job2".to_string(),
-        "sleep 1".to_string(),
-        "".to_string(),
-        "".to_string(),
-        UserOutputSource::Stdout, cursor.clone()
-    );
-    let mut job3 = Job::new(
-        "job3".to_string(),
-        "echo world".to_string(),
-        "".to_string(),
-        "world".to_string(),
-        UserOutputSource::Stdout, cursor.clone()
-    );
-    let mut job4 = Job::new(
-        "job4".to_string(),
-        "sleep 3".to_string(),
-        "".to_string(),
-        "".to_string(),
-        UserOutputSource::Stdout, cursor.clone()
-    );
-    let mut job5 = Job::new(
-        "job5".to_string(),
-        "sleep 1".to_string(),
-        "".to_string(),
-        "".to_string(),
-        UserOutputSource::Stdout, cursor.clone()
-    );
-    let mut job6 = Job::new(
-        "job6".to_string(),
-        "sleep 1".to_string(),
-        "".to_string(),
-        "".to_string(),
-        UserOutputSource::Stdout, cursor.clone()
-    );
-    let mut job6 = Job::new(
-        "job6".to_string(),
-        "false".to_string(),
-        "".to_string(),
-        "".to_string(),
-        UserOutputSource::Stdout, cursor.clone()
-    );
-    let job1_future = job1.spawn();
-    let job2_future = job2.spawn();
-    let job3_future = job3.spawn();
-    let job4_future = job4.spawn();
-    let job5_future = job5.spawn();
-    let job6_future = job6.spawn();
-    tokio::join!(job1_future, job2_future, job3_future, job4_future, job5_future, job6_future);
 
-    if let JobStatus::WrongAnswer(correct, actual) = job1.status {
-        let ln = cursor.lock().await.new_line();
-        cursor.lock().await.write_line(ln, format!("Wrong answer: expected \"{}\", found \"{}\"", correct, actual));
-    };
+    let test_path = std::convert::Into::<PathBuf>::into(args().nth(1).unwrap_or(".".to_string())).join("index.toml");
+    let config = std::fs::read_to_string(test_path).expect("Cannot read configuration");
+    let test_root: TestRoot = toml::from_str(config.as_str()).expect("Type error in the provided index.toml");
+    for (name, content) in test_root.tests {
+        let mut input = String::new();
+        if let Some(ref input_path) = content.input {
+            input = std::fs::read_to_string(input_path).unwrap_or_else(|_| panic!("Cannot read input from {}", input_path));
+        }
+
+        let output = match content.output {
+            Some(output_path) => UserOutputSource::Filename(output_path),
+            None => UserOutputSource::Stdout,
+        };
+
+        let correct_output = std::fs::read_to_string(&content.answer).unwrap_or_else(|_| panic!("Cannot read answer from {}", &content.answer));
+
+        tokio::spawn({
+            let cursor = cursor.clone();
+            async move {
+                let mut job = Job::new(name, content.cmd, input, correct_output, output, cursor.clone());
+                job.spawn().await
+            }
+        });
+    }
 
     let _ = cursor.lock().await.new_line();
 }
