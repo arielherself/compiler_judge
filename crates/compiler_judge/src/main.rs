@@ -161,18 +161,12 @@ impl Job {
 
     async fn spawn(&mut self) {
         let _permit = JOB_PERMITS.acquire().await.expect("Job error when acquiring a permit");
-        {
-            let mut guard = self.cursor.lock().await;
-            self.cursor_pos = guard.new_line();
-            std::mem::drop(guard);
-        }
+        self.cursor_pos = self.cursor.lock().await.new_line();
         self.update_state().await;
 
         let mut cmdlist = self.command.split(' ');
         let mut command = Command::new(cmdlist.next().expect("Job is empty"));
-        for item in cmdlist {
-            command.arg(item);
-        }
+        cmdlist.for_each(|x| { command.arg(x); });
 
         let mut child = command.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().expect("Cannot spawn task");
         child.stdin.take().unwrap().write_all(self.input.as_bytes()).await.expect("Cannot write to child");

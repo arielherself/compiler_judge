@@ -14,6 +14,10 @@ answer = "./test3.out"
 cmd = "../../HW1/build/tools/main/main ../../HW1/test/test4"
 answer = "./test4.out"
 
+[sample_post_order]
+cmd = "../../HW1/build/tools/main/main ./sample_post_order"
+answer = "./sample_post_order.out"
+
 [simple_test_1]
 cmd = "../../HW1/build/tools/main/main ./simple_test_1"
 answer = "./simple_test_1.out"
