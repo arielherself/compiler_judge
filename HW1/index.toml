@@ -33,5 +33,9 @@ answer = "./signed_overflow.out"
 [division_by_zero]
 cmd = "../../HW1/build/tools/main/main ./division_by_zero"
 
+[no_return]
+cmd = "../../HW1/build/tools/main/main ./no_return"
+answer = "./no_return.out"
+
 [is_your_program_slow]
 cmd = "../../HW1/build/tools/main/main ./slow"
