@@ -12,7 +12,6 @@ use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
 use tokio::time::timeout;
 use std::time::Duration;
-use toml::Table;
 
 lazy_static! {
     static ref TIMEOUT: usize = var("COMPILER_JUDGE_TIMEOUT").unwrap_or("2".to_string()).parse().unwrap();
@@ -137,7 +136,7 @@ impl Job {
             command.arg(item);
         }
 
-        let mut child = command.stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().expect("Cannot spawn task");
+        let mut child = command.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().expect("Cannot spawn task");
         child.stdin.take().unwrap().write_all(self.input.as_bytes()).await.expect("Cannot write to child");
 
         let mut job_output: String;
@@ -202,9 +201,14 @@ struct TestRoot {
 async fn main() {
     let cursor = Arc::new(Mutex::new(Cursor::new()));
 
-    let test_path = std::convert::Into::<PathBuf>::into(args().nth(1).unwrap_or(".".to_string())).join("index.toml");
-    let config = std::fs::read_to_string(test_path).expect("Cannot read configuration");
+    let test_path = std::convert::Into::<PathBuf>::into(args().nth(1).unwrap_or(".".to_string()));
+    std::env::set_current_dir(test_path).expect("Cannot enter testing directory");
+
+
+    let config = std::fs::read_to_string("index.toml").expect("Cannot read configuration");
     let test_root: TestRoot = toml::from_str(config.as_str()).expect("Type error in the provided index.toml");
+
+    let mut handles = Vec::new();
     for (name, content) in test_root.tests {
         let mut input = String::new();
         if let Some(ref input_path) = content.input {
@@ -218,14 +222,68 @@ async fn main() {
 
         let correct_output = std::fs::read_to_string(&content.answer).unwrap_or_else(|_| panic!("Cannot read answer from {}", &content.answer));
 
-        tokio::spawn({
+        let handle = tokio::spawn({
             let cursor = cursor.clone();
             async move {
                 let mut job = Job::new(name, content.cmd, input, correct_output, output, cursor.clone());
-                job.spawn().await
+                job.spawn().await;
+                job
             }
         });
+        handles.push(handle);
+    }
+
+    let mut collected_jobs = Vec::new();
+    for handle in handles {
+        if let Ok(job) = handle.await {
+            collected_jobs.push(job);
+        }
+    }
+
+    let mut accepted_cnt = 0;
+    let mut accepted = String::new();
+    let mut wrong_answer_cnt = 0;
+    let mut wrong_answer = String::new();
+    let mut time_limit_exceeded_cnt = 0;
+    let mut time_limit_exceeded = String::new();
+    let mut runtime_error_cnt = 0;
+    let mut runtime_error = String::new();
+    let tot = collected_jobs.len();
+    for job in collected_jobs {
+        match job.status {
+            JobStatus::Accepted => {
+                accepted_cnt += 1;
+                accepted += format!("    {}: passed\n", job.name).as_str();
+            }
+            JobStatus::WrongAnswer(correct, actual) => {
+                wrong_answer_cnt += 1;
+                wrong_answer += format!("    {}: expected \"{}\", found \"{}\"\n", job.name, correct, actual).as_str();
+            }
+            JobStatus::TimeLimitExceeded => {
+                time_limit_exceeded_cnt += 1;
+                time_limit_exceeded += format!("    {}: timeout after {}s\n", job.name, *TIMEOUT).as_str();
+            }
+            JobStatus::RuntimeError(e) => {
+                runtime_error_cnt += 1;
+                runtime_error += format!("    {}: runtime error: {}\n", job.name, e).as_str();
+            }
+            JobStatus::Tbd => (),
+        }
     }
 
     let _ = cursor.lock().await.new_line();
+
+    println!("\nSummary:\n");
+    if accepted_cnt != 0 {
+        println!("  Accepted ({}/{}):\n{}", accepted_cnt, tot, accepted);
+    }
+    if time_limit_exceeded_cnt != 0 {
+        println!("  Time Limit Exceeded ({}/{}):\n{}", time_limit_exceeded_cnt, tot, time_limit_exceeded);
+    }
+    if runtime_error_cnt != 0 {
+        println!("  Runtime Error ({}/{}):\n{}", runtime_error_cnt, tot, runtime_error);
+    }
+    if wrong_answer_cnt != 0 {
+        println!("  Wrong Answer ({}/{}):\n{}", wrong_answer_cnt, tot, wrong_answer);
+    }
 }
