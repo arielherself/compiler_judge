@@ -179,7 +179,7 @@ impl Job {
             Some(ref correct_output) => if job_output == *correct_output.trim().to_string() {
                 JobStatus::Accepted
             } else {
-                JobStatus::WrongAnswer(correct_output.clone(), job_output)
+                JobStatus::WrongAnswer(correct_output.trim().to_owned(), job_output)
             }
             None => JobStatus::Manual(job_output)
         };
