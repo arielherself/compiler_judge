@@ -138,7 +138,15 @@ impl Job {
 
         let mut job_output: String;
         match timeout(Duration::from_secs(*TIMEOUT as u64), child.wait_with_output()).await {
-            Ok(output) => job_output = unsafe { String::from_utf8_unchecked(output.expect("Error when fetching job output").stdout) },
+            Ok(output) => {
+                let output = output.expect("Error when fetching job output");
+                if !output.status.success() {
+                    self.status = JobStatus::RuntimeError("Process exited with non-zero code".to_string());
+                    self.update_state().await;
+                    return;
+                }
+                job_output = unsafe { String::from_utf8_unchecked(output.stdout) };
+            }
             Err(_) => {
                 self.status = JobStatus::TimeLimitExceeded;
                 self.update_state().await;
@@ -213,6 +221,13 @@ async fn main() {
     let mut job6 = Job::new(
         "job6".to_string(),
         "sleep 1".to_string(),
+        "".to_string(),
+        "".to_string(),
+        UserOutputSource::Stdout, cursor.clone()
+    );
+    let mut job6 = Job::new(
+        "job6".to_string(),
+        "false".to_string(),
         "".to_string(),
         "".to_string(),
         UserOutputSource::Stdout, cursor.clone()
