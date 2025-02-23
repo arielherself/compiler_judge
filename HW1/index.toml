@@ -1,0 +1,21 @@
+[sample_1]
+cmd = "../../HW1/build/tools/main/main ../../HW1/test/test1"
+answer = "./test1.out"
+
+[sample_2]
+cmd = "../../HW1/build/tools/main/main ../../HW1/test/test2"
+answer = "./test2.out"
+
+[sample_3]
+cmd = "../../HW1/build/tools/main/main ../../HW1/test/test3"
+answer = "./test3.out"
+
+[sample_4]
+cmd = "../../HW1/build/tools/main/main ../../HW1/test/test4"
+answer = "./test4.out"
+
+[signed_overflow]
+cmd = "../../HW1/build/tools/main/main ./signed_overflow.in"
+
+[is_your_program_slow]
+cmd = "../../HW1/build/tools/main/main ./slow.in"
