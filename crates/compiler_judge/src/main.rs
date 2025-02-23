@@ -12,6 +12,42 @@ use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
 use tokio::time::timeout;
 use std::time::Duration;
+use std::process::Output;
+use tokio::io::AsyncRead;
+use tokio::io::AsyncReadExt;
+
+/// Must do this since [tokio::process::Child::wait_with_output] will move the Child instance,
+/// making it [impossible](https://github.com/tokio-rs/tokio/discussions/7132) to kill TLEd tasks.
+async fn wait_with_output(child: &mut tokio::process::Child) -> tokio::io::Result<Output> {
+
+    async fn read_to_end<A: AsyncRead + Unpin>(io: &mut Option<A>) -> tokio::io::Result<Vec<u8>> {
+        let mut vec = Vec::new();
+        if let Some(io) = io.as_mut() {
+            io.read_to_end(&mut vec).await?;
+        }
+        Ok(vec)
+    }
+
+    let mut stdout_pipe = child.stdout.take();
+    let mut stderr_pipe = child.stderr.take();
+
+    let stdout_fut = read_to_end(&mut stdout_pipe);
+    let stderr_fut = read_to_end(&mut stderr_pipe);
+
+    let (status, stdout, stderr) = futures::try_join!(child.wait(), stdout_fut, stderr_fut)?;
+
+    // let (status, stdout, stderr) = try_join3(myself.wait(), stdout_fut, stderr_fut).await?;
+
+    // Drop happens after `try_join` due to <https://github.com/tokio-rs/tokio/issues/4309>
+    drop(stdout_pipe);
+    drop(stderr_pipe);
+
+    Ok(Output {
+        status,
+        stdout,
+        stderr,
+    })
+}
 
 lazy_static! {
     static ref TIMEOUT: usize = var("COMPILER_JUDGE_TIMEOUT").unwrap_or("2".to_string()).parse().unwrap();
@@ -142,7 +178,7 @@ impl Job {
         child.stdin.take().unwrap().write_all(self.input.as_bytes()).await.expect("Cannot write to child");
 
         let mut job_output: String;
-        match timeout(Duration::from_secs(*TIMEOUT as u64), child.wait_with_output()).await {
+        match timeout(Duration::from_secs(*TIMEOUT as u64), wait_with_output(&mut child)).await {
             Ok(output) => {
                 let output = output.expect("Error when fetching job output");
                 if !output.status.success() {
@@ -153,6 +189,7 @@ impl Job {
                 job_output = unsafe { String::from_utf8_unchecked(output.stdout) };
             }
             Err(_) => {
+                child.kill().await.expect("Cannot kill task");
                 self.status = JobStatus::TimeLimitExceeded;
                 self.update_state().await;
                 return;
