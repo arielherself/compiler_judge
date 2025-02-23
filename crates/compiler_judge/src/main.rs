@@ -260,7 +260,7 @@ async fn main() {
         let handle = tokio::spawn({
             let cursor = cursor.clone();
             async move {
-                let mut job = Job::new(name, content.cmd, input, correct_output, output, cursor.clone());
+                let mut job = Job::new(name, content.cmd, input, correct_output, output, cursor);
                 job.spawn().await;
                 job
             }
