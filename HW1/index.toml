@@ -37,5 +37,13 @@ cmd = "../../HW1/build/tools/main/main ./division_by_zero"
 cmd = "../../HW1/build/tools/main/main ./no_return"
 answer = "./no_return.out"
 
+[multiple_returns]
+cmd = "../../HW1/build/tools/main/main ./multiple_returns"
+answer = "./multiple_returns.out"
+
+[nested_return]
+cmd = "../../HW1/build/tools/main/main ./nested_return"
+answer = "./nested_return.out"
+
 [is_your_program_slow]
 cmd = "../../HW1/build/tools/main/main ./slow"
