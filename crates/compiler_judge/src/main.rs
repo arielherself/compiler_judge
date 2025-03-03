@@ -276,7 +276,6 @@ async fn main() {
     }
 
     let mut accepted_cnt = 0;
-    let mut accepted = String::new();
     let mut wrong_answer_cnt = 0;
     let mut wrong_answer = String::new();
     let mut time_limit_exceeded_cnt = 0;
@@ -290,7 +289,6 @@ async fn main() {
         match job.status {
             JobStatus::Accepted => {
                 accepted_cnt += 1;
-                accepted += format!("    {}: passed\n", job.name).as_str();
             }
             JobStatus::WrongAnswer(correct, actual) => {
                 wrong_answer_cnt += 1;
@@ -306,7 +304,7 @@ async fn main() {
             }
             JobStatus::Manual(s) => {
                 manual_cnt += 1;
-                manual += format!("    {}: result is \"{}\"", job.name, s).as_str();
+                manual += format!("    {}: result is \"{}\"\n", job.name, s).as_str();
             }
             JobStatus::Tbd => ()
         }
@@ -316,7 +314,7 @@ async fn main() {
 
     println!("\nSummary:\n");
     if accepted_cnt != 0 {
-        println!("  Accepted ({}/{}):\n{}", accepted_cnt, tot, accepted);
+        println!("  Accepted ({}/{})\n", accepted_cnt, tot);
     }
     if time_limit_exceeded_cnt != 0 {
         println!("  Time Limit Exceeded ({}/{}):\n{}", time_limit_exceeded_cnt, tot, time_limit_exceeded);
