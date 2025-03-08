@@ -153,6 +153,21 @@ cmd = "../../HW2/tools/3.3d/build/main.out"
 input = "3_3d_simple_19.in"
 answer = "accept.out"
 
+[3_3d_hd]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+input = "3_3d_hd.in"
+answer = "accept.out"
+
+[3_3d_gd]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+input = "3_3d_gd.in"
+answer = "accept.out"
+
+[3_3d_gdc]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+input = "3_3d_gdc.in"
+answer = "accept.out"
+
 [3_3d_empty]
 cmd = "../../HW2/tools/3.3d/build/main.out"
 answer = "accept.out"
