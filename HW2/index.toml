@@ -103,8 +103,63 @@ cmd = "../../HW2/tools/3.3d/build/main.out"
 input = "3_3d_simple_9.in"
 answer = "accept.out"
 
+[3_3d_simple_10]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+input = "3_3d_simple_10.in"
+answer = "accept.out"
+
+[3_3d_simple_11]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+input = "3_3d_simple_11.in"
+answer = "accept.out"
+
+[3_3d_simple_12]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+input = "3_3d_simple_12.in"
+answer = "accept.out"
+
+[3_3d_simple_13]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+input = "3_3d_simple_13.in"
+answer = "accept.out"
+
+[3_3d_simple_14]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+input = "3_3d_simple_14.in"
+answer = "accept.out"
+
+[3_3d_simple_15]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+input = "3_3d_simple_15.in"
+answer = "accept.out"
+
+[3_3d_simple_16]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+input = "3_3d_simple_16.in"
+answer = "accept.out"
+
+[3_3d_simple_17]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+input = "3_3d_simple_17.in"
+answer = "accept.out"
+
+[3_3d_simple_18]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+input = "3_3d_simple_18.in"
+answer = "accept.out"
+
+[3_3d_simple_19]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+input = "3_3d_simple_19.in"
+answer = "accept.out"
+
 [3_3d_empty]
 cmd = "../../HW2/tools/3.3d/build/main.out"
+answer = "accept.out"
+
+[3_3d_complex]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+input = "3_3d_complex.in"
 answer = "accept.out"
 
 [3_12a_sample_1]
