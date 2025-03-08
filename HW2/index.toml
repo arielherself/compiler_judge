@@ -103,3 +103,16 @@ cmd = "../../HW2/tools/3.3d/build/main.out"
 input = "3_3d_simple_9.in"
 answer = "accept.out"
 
+[3_3d_empty]
+cmd = "../../HW2/tools/3.3d/build/main.out"
+answer = "accept.out"
+
+[3_12a_sample_1]
+cmd = "../../HW2/tools/3.12a/build/main.out"
+input = "../../HW2/test/3.12a/1.txt"
+answer = "accept.out"
+
+[3_12a_sample_2]
+cmd = "../../HW2/tools/3.12a/build/main.out"
+input = "../../HW2/test/3.12a/2.txt"
+answer = "reject.out"
