@@ -59,7 +59,10 @@ Due to the difficulty of directly load an executable as a shared object, I added
 	000832f8  4c89e8             mov     rax, r13
 	000832fb  e9fac0f8ff         jmp     sub_f3fa
 
-Though there are still a bunch of stuff not set up correctly which will eventually lead to a seg-fault, you can already use the patched executable to generate IR from an arbitrary FDMJ source file.
+And you can use the patched executable to generate IR from an arbitrary FDMJ source file.
+
+	[UPDATE] Now I use the stack frame instead of register "r13" to store the return value of ast2xml, therefore the segfault problem is resolved.
+	original: "Though there are still a bunch of stuff not set up correctly which will eventually lead to a seg-fault, you can already use the patched executable to generate IR from an arbitrary FDMJ source file."
 
 However, you should notice that implementations of all ASTToTreeVisitor's that uses an ExtCall (e.g. getint, putint) might be faulty. Negative literals are also not handled correctly.
 
