@@ -1,0 +1,66 @@
+This directory contains a patched version of the "gentests-ubuntu-amd64" executable.
+
+After playing with the original "gentests" executable for a while, I came into the conclusion that it's likely that the source code of "gentests" includes a complete implementation of an AST to IRP translator, but with critical code commented out.
+
+Due to the difficulty of directly load an executable as a shared object, I added a code snippet and use a jmp instruction to redirect a line of code in "main" function to my custom code. The snippet is shown below:
+
+	00083250    int64_t sub_83250(fdmj::AST_YYSTYPE* arg1 @ r14,
+	00083250      AST_Semant_Map* arg2 @ r15)
+
+	00083250  b901000000         mov     ecx, 0x1
+	00083255  31d2               xor     edx, edx  {0x0}
+	00083257  4c89fe             mov     rsi, r15
+	0008325a  4c89f7             mov     rdi, r14
+	0008325d  e8fe4ffaff         call    ast2xml
+	00083262  4989c5             mov     r13, rax
+	00083265  90                 nop
+	00083266  90                 nop
+	00083267  90                 nop       {sub_83268}
+	{ Falls through into sub_83268 }
+
+
+	00083268    int64_t sub_83268(fdmj::AST_YYSTYPE* arg1 @ r14,
+	00083268      AST_Semant_Map* arg2 @ r15)
+
+	00083268  ba29000000         mov     edx, 0x29
+	0008326d  488d352cb10100     lea     rsi, [rel data_9e3a0]  {"Converting AST to IR  (Hacked by…"}
+	00083274  488d3dc5ee0100     lea     rdi, [rel std::cout]
+	0008327b  e8a066f8ff         call    std::__ostream_insert<char>
+	00083280  488d3db9ee0100     lea     rdi, [rel std::cout]
+	00083287  e864fdffff         call    std::endl<char>.isra.0
+	0008328c  90                 nop
+	0008328d  ba14000000         mov     edx, 0x14
+	00083292  488d3547b10100     lea     rsi, [rel data_9e3e0]  {"Saving IR (XML) to: "}
+	00083299  488d3da0ee0100     lea     rdi, [rel std::cout]
+	000832a0  e87b66f8ff         call    std::__ostream_insert<char>
+	000832a5  90                 nop
+	000832a6  48c7c20c000000     mov     rdx, 0xc
+	000832ad  488d3554b10100     lea     rsi, [rel data_9e408]  {"dumped.3.irp"}
+	000832b4  488d3d85ee0100     lea     rdi, [rel std::cout]
+	000832bb  90                 nop
+	000832bc  488d3d7dee0100     lea     rdi, [rel std::cout]
+	000832c3  e85866f8ff         call    std::__ostream_insert<char>
+	000832c8  4889c7             mov     rdi, rax
+	000832cb  e820fdffff         call    std::endl<char>.isra.0
+	000832d0  90                 nop
+	000832d1  4c89fe             mov     rsi, r15
+	000832d4  4c89f7             mov     rdi, r14
+	000832d7  e864d2fdff         call    ast2tree
+	000832dc  90                 nop
+	000832dd  4889c7             mov     rdi, rax
+	000832e0  e8dbcefeff         call    tree2xml
+	000832e5  90                 nop
+	000832e6  4889c7             mov     rdi, rax
+	000832e9  488d3518b10100     lea     rsi, [rel data_9e408]  {"dumped.3.irp"}
+	000832f0  90                 nop
+	000832f1  e8ca9cffff         call    tinyxml2::XMLDocument::SaveFile
+	000832f6  90                 nop
+	000832f7  90                 nop
+	000832f8  4c89e8             mov     rax, r13
+	000832fb  e9fac0f8ff         jmp     sub_f3fa
+
+Though there are still a bunch of stuff not set up correctly which will eventually lead to a seg-fault, you can already use the patched executable to generate IR from an arbitrary FDMJ source file.
+
+However, you should notice that implementations of all ASTToTreeVisitor's that uses an ExtCall (e.g. getint, putint) might be faulty. Negative literals are also not handled correctly.
+
+If you are interested in the whole process of me patching this file, please visit https://mp.weixin.qq.com/s/YHP6flKdpIYBBrAf9WTIVQ for more details.
