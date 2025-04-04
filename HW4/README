@@ -2,7 +2,7 @@ This directory contains a patched version of the "gentests-ubuntu-amd64" executa
 
 After playing with the original "gentests" executable for a while, I came to the conclusion that it's likely that the source code of "gentests" includes a complete implementation of an AST to IRP translator, but with critical code commented out.
 
-Due to the difficulty of directly load an executable as a shared object, I added a code snippet and use a jmp instruction to redirect a line of code in "main" function to my custom code. The snippet is shown below:
+Due to the difficulty of directly loading an executable as a shared object, I added a code snippet and use a jmp instruction to redirect a line of code in "main" function to my custom code. The snippet is shown below:
 
 	00083250    int64_t sub_83250(fdmj::AST_YYSTYPE* arg1 @ r14,
 	00083250      AST_Semant_Map* arg2 @ r15)
