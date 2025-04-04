@@ -1,6 +1,6 @@
 This directory contains a patched version of the "gentests-ubuntu-amd64" executable.
 
-After playing with the original "gentests" executable for a while, I came into the conclusion that it's likely that the source code of "gentests" includes a complete implementation of an AST to IRP translator, but with critical code commented out.
+After playing with the original "gentests" executable for a while, I came to the conclusion that it's likely that the source code of "gentests" includes a complete implementation of an AST to IRP translator, but with critical code commented out.
 
 Due to the difficulty of directly load an executable as a shared object, I added a code snippet and use a jmp instruction to redirect a line of code in "main" function to my custom code. The snippet is shown below:
 
@@ -64,6 +64,6 @@ And you can use the patched executable to generate IR from an arbitrary FDMJ sou
 	[UPDATE] Now I use the stack frame instead of register "r13" to store the return value of ast2xml, therefore the segfault problem is resolved.
 	original: "Though there are still a bunch of stuff not set up correctly which will eventually lead to a seg-fault, you can already use the patched executable to generate IR from an arbitrary FDMJ source file."
 
-However, you should notice that implementations of all ASTToTreeVisitor's that uses an ExtCall (e.g. getint, putint) might be faulty. Negative literals are also not handled correctly.
+However, you should notice that implementations of all ASTToTreeVisitor methods that uses an ExtCall (e.g. getint, putint) might be faulty. Negative literals are also not handled correctly.
 
 If you are interested in the whole process of me patching this file, please visit https://mp.weixin.qq.com/s/YHP6flKdpIYBBrAf9WTIVQ for more details.
